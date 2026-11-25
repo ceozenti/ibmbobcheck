@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main, modernization]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend — Build & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: modern/backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      # Create a stub legacybank.db so tests that use in-memory SQLite pass context validation
+      - name: Create stub legacybank.db
+        run: touch ../../legacybank.db
+
+      - name: Build and test
+        run: mvn --no-transfer-progress verify
+
+  frontend:
+    name: Frontend — Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: modern/frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: modern/frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build

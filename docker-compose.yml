@@ -1,0 +1,28 @@
+services:
+  backend:
+    build:
+      context: ./modern/backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./legacybank.db:/data/legacybank.db
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:sqlite:/data/legacybank.db
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://localhost:8080/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./modern/frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8080
